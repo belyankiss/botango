@@ -12,12 +12,13 @@ class CreateProject:
             sys.exit(1)
 
     def make_project(self):
-        (self._path / "app").mkdir(parents=True)
-        (self._path / "app" / "__init__.py").touch()
-        (self._path / "app" / ".env").write_text(
+        # (self._path / "app").mkdir(parents=True)
+        # (self._path / "app" / "__init__.py").touch()
+        (self._path).mkdir(parents=True)
+        (self._path / ".env").write_text(
             """BOT_TOKEN="""
         )
-        (self._path / "app" / "settings.py").write_text(
+        (self._path / "settings.py").write_text(
             """from typing import Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -29,7 +30,7 @@ class Settings(BaseSettings):
 
 settings = Settings()"""
         )
-        (self._path / "app" / "main.py").write_text(
+        (self._path / "main.py").write_text(
             """import asyncio
 
 from botango import LongPollingBot
@@ -46,6 +47,24 @@ app = LongPollingBot(
 
 if __name__ == '__main__':
     asyncio.run(app.run())"""
+        )
+        (self._path / ".gitignore").write_text(
+            """.gitignore
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.dist-info/
+build/
+dist/
+.DS_Store
+*.db
+*.sqlite3
+*.iml
+*.xml
+.idea
+"""
         )
         print(f"✅ Бот '{self._bot_name}' успешно создан!")
         print(f"➡ Перейди в каталог: cd {self._bot_name}")
