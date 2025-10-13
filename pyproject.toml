@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "botango"          # уникальное имя в PyPI
+version = "0.1.0"               # или убери и используй setuptools_scm
+description = "Простая библиотека для создания телеграмм ботов на основе библиотеки aiogram."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+  { name="@coder", email="belyankiss@gmail.com" }
+]
+keywords = ["telegram", "bot", "async"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+dependencies = [
+  "aiogram>=3.12.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/belyankiss/botango"
+"Repository" = "https://github.com/yourname/your-repo"
+"Documentation" = "https://yourname.github.io/your-repo"
+
+[tool.setuptools.packages.find]
+where = ["src"]

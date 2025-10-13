@@ -1,0 +1,6 @@
+.gitignore
+.idea
+*.xml
+*.iml
+*.db
+*.sqlite3
