@@ -1,6 +1,12 @@
 .gitignore
-.idea
-*.xml
-*.iml
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.dist-info/
+build/
+dist/
+.DS_Store
 *.db
 *.sqlite3

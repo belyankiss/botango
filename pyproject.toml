@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-  { name="@coder", email="belyankiss@gmail.com" }
+  { name="@PyExecutor", email="belyankiss@gmail.com" }
 ]
 keywords = ["telegram", "bot", "async"]
 classifiers = [
@@ -21,12 +21,17 @@ classifiers = [
 
 dependencies = [
   "aiogram>=3.12.0",
+  "pydantic-settings>=2.3.0"
 ]
 
 [project.urls]
 "Homepage" = "https://github.com/belyankiss/botango"
-"Repository" = "https://github.com/yourname/your-repo"
-"Documentation" = "https://yourname.github.io/your-repo"
+"Repository" = "https://github.com/belyankiss/botango"
+
+[project.scripts]
+botango = "botango.cli:main"
+
+
 
 [tool.setuptools.packages.find]
 where = ["src"]
