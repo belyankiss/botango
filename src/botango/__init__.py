@@ -8,4 +8,4 @@
 __all__ = ["__version__", "LongPollingBot"]
 __version__ = "0.1.0"
 
-from .core_bot import LongPollingBot
+from botango.bot.core_bot import LongPollingBot

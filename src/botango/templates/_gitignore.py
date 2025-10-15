@@ -1,0 +1,16 @@
+GITIGNORE=""".gitignore
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+.dist-info/
+build/
+dist/
+.DS_Store
+*.db
+*.sqlite3
+*.iml
+*.xml
+.idea
+"""
