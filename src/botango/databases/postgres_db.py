@@ -31,3 +31,15 @@ class PostgresDatabase(AbstractDatabase):
             "POSTGRES_USER": self.user,
             "POSTGRES_DATABASE": self.name_db
         }
+
+    def __repr__(self):
+        var = []
+        for k, v in self.__dict__.items():
+            if not k.startswith("_") and not callable(v):
+                if k == "password":
+                    var.append(f"{k}={"*" * len(v)}")
+                else:
+                    var.append(f"{k}={v}")
+        return (f"{self.__class__.__name__}("
+                f"{", ".join(var)}"
+                f")")
