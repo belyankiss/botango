@@ -1,10 +1,4 @@
-from jinja2 import Template
-
-from botango.schemas.template_class import ManagerTemplate
-from .enviroment_jinja import ENV
-
-MAIN_TEMPLATE = ENV.from_string(
-"""{% if mode.type == 'webhook' %}
+{% if mode.type == 'webhook' %}
 import asyncio
 
 from aiogram import Bot, Router
@@ -73,8 +67,3 @@ async def main():
 if __name__ == '__main__':
     asyncio.run(main())
 {% endif %}
-""")
-
-class MainTemplate(ManagerTemplate):
-    filename: str = "main.py"
-    template: Template = MAIN_TEMPLATE

@@ -10,6 +10,7 @@ class AbstractDatabase(abc.ABC):
     _data: Dict[str, str] = None
     _registry: ClassVar[Dict[str, Type["AbstractDatabase"]]] = {}
     __dependencies__: str
+    __version__: str
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

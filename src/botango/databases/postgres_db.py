@@ -6,6 +6,7 @@ from botango.databases.absrtact_db import AbstractDatabase
 class PostgresDatabase(AbstractDatabase):
     name = "postgresql"
     __dependencies__ = "asyncpg"
+    __version__ = "0.30.0"
 
     def __init__(
             self,
@@ -21,7 +22,6 @@ class PostgresDatabase(AbstractDatabase):
         self.port = port
         self.user = user
         self.password = password
-        self._path = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{self.name_db}"
 
     def __repr__(self):
         var = []

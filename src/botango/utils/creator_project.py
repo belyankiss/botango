@@ -1,14 +1,26 @@
 import sys
 from pathlib import Path
 
-from botango.utils.creator_database import CreatorDatabase
 from botango.utils.package_loader import PackageLoader
-from botango.utils.render_templates import render_template
+from botango.utils.render_templates import RenderTemplate
 from botango.schemas.project_schema import ProjectSchema
-from botango.templates._env import EnvTemplate
-from botango.templates._gitignore import GitIgnoreTemplate
-from botango.templates._main import MainTemplate
-from botango.templates._settings import SettingsTemplate
+
+DEFAULT_FILES = {
+    "main.py": "main.j2",
+    "settings.py": "settings.j2",
+    ".gitignore": "gitignore.j2",
+    ".env": "env.j2"
+}
+
+DATABASE_FILES = {
+    "database/__init__.py": "init_database.j2",
+    "database/connection.py": "connection.j2",
+    "database/models/__init__.py": "init_models.j2",
+    "database/models/base.py": "base.j2",
+    "database/models/user.py": "model_user.j2"
+}
+
+
 
 
 class CreatorProject:
@@ -18,26 +30,20 @@ class CreatorProject:
     ):
         self.project_schema = project_schema
         self.project_path = Path(project_schema.name)
-        if self.project_path.exists():
-            print(f"Проект с таким названием уже существует: {project_schema.name}")
-            sys.exit(1)
+        self.project_path.mkdir(parents=True, exist_ok=True)
+        self.render_template = RenderTemplate()
 
-    def _create_env(self):
-        render_template(EnvTemplate(), self.project_schema.model_dump())
+    def _create_default_files(self):
+        for k, v in DEFAULT_FILES.items():
+            self.render_template.make_file(k, v, **self.project_schema.model_dump())
 
-    @staticmethod
-    def _create_gitignore():
-        render_template(GitIgnoreTemplate())
-
-    def _create_main(self):
-        render_template(MainTemplate(), self.project_schema.model_dump())
-
-    def _create_settings(self):
-        render_template(SettingsTemplate(), self.project_schema.model_dump())
+    def _create_database_files(self):
+        for k, v in DATABASE_FILES.items():
+            self.render_template.make_file(k, v, **self.project_schema.database.to_dict())
 
     def _install_db_dependencies(self):
         if self.project_schema.database:
-            PackageLoader(self.project_schema.database.__dependencies__, version="0.21.0")
+            PackageLoader(self.project_schema.database.__dependencies__, self.project_schema.database.__version__)
             self._install_sqlalchemy()
 
     @staticmethod
@@ -46,13 +52,9 @@ class CreatorProject:
 
 
     def create(self):
-        self.project_path.mkdir(parents=True)
-        (self.project_path / "__init__.py").write_text("# create bot by botango")
-        self._create_gitignore()
-        self._create_settings()
-        self._create_main()
-        self._create_env()
-        self._install_db_dependencies()
+        self._create_default_files()
         if self.project_schema.database:
-            creator_database = CreatorDatabase(database=self.project_schema.database)
-            creator_database.create_files()
+            Path("database/models").mkdir(parents=True, exist_ok=True)
+            self._create_database_files()
+            self._install_db_dependencies()
+            self._install_sqlalchemy()

@@ -9,12 +9,11 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
 
-from botango.utils.creator_project import CreatorProject
 from botango.databases.absrtact_db import AbstractDatabase
 from botango.databases.aiosqlite_db import AioSQLiteDatabase
 from botango.databases.postgres_db import PostgresDatabase
 from botango.schemas.project_schema import ProjectSchema
-
+from botango.utils.creator_project import CreatorProject
 
 
 def validate_https_host(host: str) -> str:
@@ -132,6 +131,7 @@ def newbot(name, token):
             finally:
                 await bot.session.close()
     asyncio.run(check_token())
+
     data = {
         "name": name,
         "token": token,

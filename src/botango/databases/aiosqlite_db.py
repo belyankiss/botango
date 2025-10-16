@@ -7,6 +7,7 @@ class AioSQLiteDatabase(AbstractDatabase):
     name = "aiosqlite"
     name_db = "db"
     __dependencies__ = "aiosqlite"
+    __version__ = "0.21.0"
 
     def __init__(self, name_db: Optional[str]):
         if name_db:

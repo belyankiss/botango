@@ -1,11 +1,4 @@
-from pathlib import Path
-
-from jinja2 import Template
-
-from botango.schemas.template_class import ManagerTemplate
-from .enviroment_jinja import ENV
-
-CONNECTION_TEMPLATE = ENV.from_string('''{% if name == 'aiosqlite' %}
+{% if name == 'aiosqlite' %}
 # connection.py
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
@@ -218,9 +211,25 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     finally:
         await session.close()
 
+# === Служебные функции ===
+async def create_tables() -> None:
+    """Создать таблицы из Base.metadata (только для DEV/testing)."""
+    from models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
+
+    async with engine.begin() as conn:
+        # run_sync выполнит синхронную metadata.create_all в контексте асинхронного соединения
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def drop_tables() -> None:
+    """Удалить таблицы (DEV only)."""
+    from models import Base
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
 
 # Health check
-async def ping_db(timeout: float = 2.0) -> bool:
+async def ping(timeout: float = 2.0) -> bool:
     """
     Проверяет подключение: SELECT 1. Возвращает True если OK.
     """
@@ -243,9 +252,3 @@ async def run_in_transaction(callable_func: Callable[..., Any], *args, **kwargs)
     async with get_session() as session:
         return await callable_func(session, *args, **kwargs)
 {% endif %}
-'''
-)
-
-class ConnectionTemplate(ManagerTemplate):
-    filename: Path
-    template: Template = CONNECTION_TEMPLATE

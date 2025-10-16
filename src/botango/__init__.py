@@ -5,7 +5,7 @@
 """
 
 
-__all__ = ["__version__", "LongPollingBot"]
+__all__ = ["__version__", "LongPollingBot", "WebhookBot"]
 __version__ = "0.1.0"
 
-from botango.bot.core_bot import LongPollingBot
+from botango.bot.core_bot import LongPollingBot, WebhookBot
