@@ -20,8 +20,19 @@ DATABASE_FILES = {
     "database/models/user.py": "database/models/user.j2"
 }
 
+DEFAULT_DIRS_BOT = [
+    "middlewares",
+    "handlers",
+    "services",
+    "utils"
+]
 
-
+DEFAULT_DIRS_DATABASE = [
+    "models",
+    "repositories",
+    "services",
+    "utils"
+]
 
 class CreatorProject:
     def __init__(
@@ -31,6 +42,8 @@ class CreatorProject:
         self.project_schema = project_schema
         self.project_path = Path(project_schema.name)
         self.project_path.mkdir(parents=True, exist_ok=True)
+        for value in DEFAULT_DIRS_BOT:
+            (self.project_path / value).mkdir(parents=True, exist_ok=True)
         self.render_template = RenderTemplate()
 
     def _create_default_files(self):
@@ -54,7 +67,8 @@ class CreatorProject:
     def create(self):
         self._create_default_files()
         if self.project_schema.database:
-            Path("database/models").mkdir(parents=True, exist_ok=True)
+            for value in DEFAULT_DIRS_DATABASE:
+                Path(f"database/{value}").mkdir(parents=True, exist_ok=True)
             self._create_database_files()
             self._install_db_dependencies()
             self._install_sqlalchemy()
