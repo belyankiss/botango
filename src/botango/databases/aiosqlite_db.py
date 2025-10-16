@@ -6,10 +6,11 @@ from botango.databases.absrtact_db import AbstractDatabase
 class AioSQLiteDatabase(AbstractDatabase):
     name = "aiosqlite"
     name_db = "db"
+    __dependencies__ = "aiosqlite"
 
     def __init__(self, name_db: Optional[str]):
         if name_db:
             if "." in name_db:
                 name_db = name_db.split(".")[0]
-            self.name_db = f"{name_db}.sqlite3"
+            self.name_db = f"{name_db}.db"
 

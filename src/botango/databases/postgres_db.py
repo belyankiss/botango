@@ -5,6 +5,7 @@ from botango.databases.absrtact_db import AbstractDatabase
 
 class PostgresDatabase(AbstractDatabase):
     name = "postgresql"
+    __dependencies__ = "asyncpg"
 
     def __init__(
             self,

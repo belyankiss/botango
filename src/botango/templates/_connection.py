@@ -1,0 +1,251 @@
+from pathlib import Path
+
+from jinja2 import Template
+
+from botango.schemas.template_class import ManagerTemplate
+from .enviroment_jinja import ENV
+
+CONNECTION_TEMPLATE = ENV.from_string('''{% if name == 'aiosqlite' %}
+# connection.py
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+)
+from sqlalchemy.pool import StaticPool, NullPool
+from sqlalchemy import MetaData, text
+import logging
+
+from settings import settings
+
+logger = logging.getLogger(__name__)
+
+# Нормированная конвенция имён для стабильных alembic-миграций
+naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+metadata = MetaData(naming_convention=naming_convention)
+
+# === Engine creation ===
+# Подстройка под aiosqlite:
+# - Для in-memory: используем StaticPool + check_same_thread=False
+# - Для файловой sqlite: можно использовать NullPool
+# Подставь settings.url_database как "sqlite+aiosqlite:///./db.sqlite3" или ":memory:"
+db_url = settings.url_database
+
+# Опции по умолчанию — изменяй при необходимости
+engine_kwargs = {
+    "echo": bool(settings.debug),           # лог SQL при debug
+    "future": True,
+}
+
+if db_url.startswith("sqlite+aiosqlite:///:memory:"):
+    # In-memory sqlite требует StaticPool и check_same_thread=False
+    engine = create_async_engine(
+        db_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+        **engine_kwargs,
+    )
+else:
+    # File-based sqlite: NullPool обычно безопасен для aiosqlite
+    engine = create_async_engine(
+        db_url,
+        connect_args={"timeout": 30},  # seconds - полезно при блокировках
+        poolclass=NullPool,
+        **engine_kwargs,
+    )
+
+# Сессионная фабрика
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,  # удобно: объекты не исчезают после коммита
+)
+
+
+# === Контекст для работы с сессией ===
+@asynccontextmanager
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Асинхронный контекстный менеджер для сессии.
+    Гарантирует rollback при исключении и закрытие сессии.
+    Пример:
+        async with get_session() as session:
+            await session.execute(...)
+    """
+    session: AsyncSession = AsyncSessionLocal()
+    try:
+        yield session
+        # явный коммит — принято в большинстве приложений
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
+
+
+# === Служебные функции ===
+async def create_tables() -> None:
+    """Создать таблицы из Base.metadata (только для DEV/testing)."""
+    from models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
+
+    async with engine.begin() as conn:
+        # run_sync выполнит синхронную metadata.create_all в контексте асинхронного соединения
+        await conn.run_sync(Base.metadata.create_all)
+
+
+async def drop_tables() -> None:
+    """Удалить таблицы (DEV only)."""
+    from models import Base
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+
+
+async def ping() -> bool:
+    """Health-check: попробовать выполнить простой SELECT 1."""
+    try:
+        async with engine.connect() as conn:
+            result = await conn.execute(text("SELECT 1"))
+            return result.scalar_one_or_none() == 1
+    except Exception as exc:
+        logger.exception("DB ping failed: %s", exc)
+        return False
+
+
+async def close_engine() -> None:
+    """Корректно закрыть engine при shutdown приложения."""
+    await engine.dispose()
+
+
+# === Дополнительно: ассистент для run-in-transaction ===
+async def run_in_transaction(func, *args, **kwargs):
+    """
+    Удобный wrapper: запускает callable внутри транзакции.
+    func - coroutine function(session, *args, **kwargs)
+    """
+    async with get_session() as session:
+        return await func(session, *args, **kwargs)
+{% endif %}
+
+{% if name == 'postgresql' %}
+# connection.py
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator, Callable, Any
+import logging
+import asyncio
+
+from sqlalchemy.ext.asyncio import (
+    create_async_engine,
+    async_sessionmaker,
+    AsyncSession,
+)
+from sqlalchemy import MetaData, text
+from sqlalchemy.pool import QueuePool
+
+from settings import settings
+
+logger = logging.getLogger(__name__)
+
+# Стабильная naming convention для Alembic
+naming_convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(column_0_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+metadata = MetaData(naming_convention=naming_convention)
+
+# DB URL должен быть типа: postgresql+asyncpg://user:password@host:port/dbname
+db_url = settings.url_database
+
+# Подбор pool-параметров
+pool_size = getattr(settings, "db_pool_size", 10)
+max_overflow = getattr(settings, "db_max_overflow", 20)
+pool_timeout = getattr(settings, "db_pool_timeout", 30)
+pool_recycle = getattr(settings, "db_pool_recycle", -1)  # seconds, -1 = disabled
+
+# Доп. connect args для asyncpg: statement_timeout (ms), application_name, ssl, server_settings
+connect_args = {
+    # Пример: 5s timeout для длинных запросов
+    "server_settings": {"statement_timeout": str(getattr(settings, "statement_timeout_ms", 5000))},
+    # Для production часто нужен SSLContext, можно передать ssl parameter либо в URL
+    # "ssl": ssl_context,
+}
+
+engine = create_async_engine(
+    db_url,
+    echo=bool(settings.debug),
+    future=True,
+    poolclass=QueuePool,
+    pool_size=pool_size,
+    max_overflow=max_overflow,
+    pool_timeout=pool_timeout,
+    pool_recycle=pool_recycle,
+    connect_args=connect_args,
+)
+
+AsyncSessionLocal = async_sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
+
+@asynccontextmanager
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    """
+    Асинхронный контекст для сессии с авто-commit/rollback.
+    Используй: async with get_session() as session: ...
+    """
+    session: AsyncSession = AsyncSessionLocal()
+    try:
+        yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()
+
+
+# Health check
+async def ping_db(timeout: float = 2.0) -> bool:
+    """
+    Проверяет подключение: SELECT 1. Возвращает True если OK.
+    """
+    try:
+        async with engine.connect() as conn:
+            result = await asyncio.wait_for(conn.execute(text("SELECT 1")), timeout)
+            return True
+    except Exception as exc:
+        logger.exception("DB ping failed: %s", exc)
+        return False
+
+
+async def close_engine() -> None:
+    """Закрыть пул при shutdown приложения."""
+    await engine.dispose()
+
+
+# Вспомогательная функция для запуска операций в транзакции
+async def run_in_transaction(callable_func: Callable[..., Any], *args, **kwargs):
+    async with get_session() as session:
+        return await callable_func(session, *args, **kwargs)
+{% endif %}
+'''
+)
+
+class ConnectionTemplate(ManagerTemplate):
+    filename: Path
+    template: Template = CONNECTION_TEMPLATE

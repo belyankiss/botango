@@ -5,9 +5,11 @@ from typing import ClassVar, Dict, Any, List, Type
 class AbstractDatabase(abc.ABC):
     name: ClassVar[str]
     name_db: str = "database"
+    debug: bool = False
     _path: str
     _data: Dict[str, str] = None
     _registry: ClassVar[Dict[str, Type["AbstractDatabase"]]] = {}
+    __dependencies__: str
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -32,6 +34,14 @@ class AbstractDatabase(abc.ABC):
         return (f"{self.__class__.__name__}("
                 f"{", ".join(var)}"
                 f")")
+
+    @classmethod
+    def to_dict(cls) -> Dict[str, Any]:
+        values = {}
+        for k, v in cls.__dict__.items():
+            if not k.startswith("_") and not callable(v):
+                values[k] = v
+        return values
 
 
 

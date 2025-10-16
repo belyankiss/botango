@@ -19,10 +19,30 @@ class Settings(BaseSettings):
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
     POSTGRES_NAME: str
+    DEBUG: bool
     {% endif %}
     {% if database.name == 'aiosqlite' %}
     NAME_DATABASE: str
+    DEBUG: bool
     {% endif %}
+    
+    @property
+    def url_database(self) -> str:
+        {% if database.name == 'postgresql' %}
+        return (f"postgresql+asyncpg://
+                {self.POSTGRES_USER}:
+                {self.POSTGRES_PASSWORD}@
+                {self.POSTGRES_HOST}:
+                {self.POSTGRES_PORT}/
+                {self.POSTGRES_NAME}")
+        {% endif %}
+        {% if database.name == 'aiosqlite' %}
+        return f"sqlite+aiosqlite:///./{self.NAME_DATABASE}"
+        {% endif %}
+        
+    @property
+    def debug(self) -> bool:
+        return self.DEBUG
     
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
     

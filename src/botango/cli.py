@@ -9,7 +9,7 @@ from aiogram import Bot
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
 
-from botango.creator_project import CreatorProject
+from botango.utils.creator_project import CreatorProject
 from botango.databases.absrtact_db import AbstractDatabase
 from botango.databases.aiosqlite_db import AioSQLiteDatabase
 from botango.databases.postgres_db import PostgresDatabase
@@ -151,10 +151,6 @@ def newbot(name, token):
     p_schema = ProjectSchema(**data)
     creator_project = CreatorProject(p_schema)
     creator_project.create()
-    # env_render = ENV_TEMPLATE.render(**p_schema.model_dump())
-    # print(env_render)
-    # settings_render = SETTINGS_TEMPLATE.render(**p_schema.model_dump())
-    # print(settings_render)
 
 
 

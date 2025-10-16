@@ -1,7 +1,9 @@
 import sys
 from pathlib import Path
 
-from botango.render_templates import render_template
+from botango.utils.creator_database import CreatorDatabase
+from botango.utils.package_loader import PackageLoader
+from botango.utils.render_templates import render_template
 from botango.schemas.project_schema import ProjectSchema
 from botango.templates._env import EnvTemplate
 from botango.templates._gitignore import GitIgnoreTemplate
@@ -33,10 +35,24 @@ class CreatorProject:
     def _create_settings(self):
         render_template(SettingsTemplate(), self.project_schema.model_dump())
 
+    def _install_db_dependencies(self):
+        if self.project_schema.database:
+            PackageLoader(self.project_schema.database.__dependencies__, version="0.21.0")
+            self._install_sqlalchemy()
+
+    @staticmethod
+    def _install_sqlalchemy():
+        PackageLoader("sqlalchemy", version="2.0.44")
+
+
     def create(self):
-        (self.project_path).mkdir(parents=True)
+        self.project_path.mkdir(parents=True)
         (self.project_path / "__init__.py").write_text("# create bot by botango")
         self._create_gitignore()
         self._create_settings()
         self._create_main()
         self._create_env()
+        self._install_db_dependencies()
+        if self.project_schema.database:
+            creator_database = CreatorDatabase(database=self.project_schema.database)
+            creator_database.create_files()

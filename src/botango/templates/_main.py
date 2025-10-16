@@ -12,6 +12,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
+from database.create_database import create_database
 from settings import settings
 from botango.bot.core_bot import WebhookBot
 
@@ -32,8 +33,12 @@ async def example_func(message: Message):
 # if you need to include routers
 app.include_routers(router)
 
+async def main():
+    await create_database(delete_tables=True)
+    await app.run()
+
 if __name__ == '__main__':
-    asyncio.run(app.run())
+    asyncio.run(main())
 {% endif %}
 {% if mode.type == 'long_polling' %}
 import asyncio
@@ -43,6 +48,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
+from database.create_database import create_database
 from settings import settings
 from botango.bot.core_bot import LongPollingBot
 
@@ -60,8 +66,12 @@ async def example_func(message: Message):
 # if you need to include routers
 app.include_routers(router)
 
+async def main():
+    await create_database(delete_tables=True)
+    await app.run()
+
 if __name__ == '__main__':
-    asyncio.run(app.run())
+    asyncio.run(main())
 {% endif %}
 """)
 

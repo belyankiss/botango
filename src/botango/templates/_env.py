@@ -21,12 +21,13 @@ POSTGRES_PORT={{ database.port }}
 POSTGRES_USER={{ database.user }}
 POSTGRES_PASSWORD={{ database.password }}
 POSTGRES_NAME={{ database.name_db }}
+DEBUG=False
 
 {% endif %}
 {% if database.name == 'aiosqlite' %}
 # DATABASE_DATA
 NAME_DATABASE={{ database.name_db }}
-
+DEBUG=False
 {% endif %}
 """)
 
