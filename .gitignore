@@ -10,3 +10,6 @@ dist/
 .DS_Store
 *.db
 *.sqlite3
+*.iml
+*.xml
+.idea

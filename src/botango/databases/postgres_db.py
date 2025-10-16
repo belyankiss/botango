@@ -22,16 +22,6 @@ class PostgresDatabase(AbstractDatabase):
         self.password = password
         self._path = f"postgresql+asyncpg://{user}:{password}@{host}:{port}/{self.name_db}"
 
-    @property
-    def data(self) -> Dict[str, str]:
-        return {
-            "POSTGRES_HOST": self.host,
-            "POSTGRES_PORT": self.port,
-            "POSTGRES_PASSWORD": self.password,
-            "POSTGRES_USER": self.user,
-            "POSTGRES_DATABASE": self.name_db
-        }
-
     def __repr__(self):
         var = []
         for k, v in self.__dict__.items():

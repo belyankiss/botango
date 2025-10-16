@@ -9,6 +9,7 @@ class WebHookData(BaseModel):
     host: str
     port: Union[int, str]
     url_path: str
+    webhook_secret: str
 
 class ModeSchema(BaseModel):
     type: str

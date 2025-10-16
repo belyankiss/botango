@@ -13,8 +13,3 @@ class AioSQLiteDatabase(AbstractDatabase):
                 name_db = name_db.split(".")[0]
             self.name_db = f"{name_db}.sqlite3"
 
-    @property
-    def data(self) -> Dict[str, str]:
-        return {
-            "AIOSQLITE_DATABASE": self.name_db
-        }

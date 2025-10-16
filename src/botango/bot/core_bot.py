@@ -132,7 +132,7 @@ class WebhookBot(_BaseWebSettings):
         await self.bot.delete_webhook()
         await self.app["http_session"].close()
 
-    def start(self, host: str = "0.0.0.0", port: int = 8000):
+    def run(self, host: str = "0.0.0.0", port: int = 8000):
         self.app.router.add_post(self._webhook_path, self._handle)
 
         async def _health(_):

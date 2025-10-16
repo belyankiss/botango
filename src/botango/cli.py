@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-from typing import List, Dict, Any, Union, Optional
+import uuid
+from typing import List, Dict, Any, Optional
 
 import click
 from aiogram import Bot
 from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
 
+from botango.creator_project import CreatorProject
 from botango.databases.absrtact_db import AbstractDatabase
 from botango.databases.aiosqlite_db import AioSQLiteDatabase
 from botango.databases.postgres_db import PostgresDatabase
-from botango.databases.schemas import ProjectSchema
+from botango.schemas.project_schema import ProjectSchema
+
+
 
 def validate_https_host(host: str) -> str:
     if not host.startswith("https://"):
@@ -78,7 +82,12 @@ def choice_setting_bot(data: Dict[str, Any]):
         host = click.prompt("Введите хост для webhook", default=None, value_proc=validate_https_host)
         port = click.prompt("Введите порт для webhook", default=8000, type=int)
         url_path = click.prompt("Введите путь для webhook", default="/webhook")
-        data["mode"] = {"type": "webhook", "data": {"host": host, "port": port, "url_path": url_path}}
+        data["mode"] = {"type": "webhook", "data": {
+            "host": host,
+            "port": port,
+            "url_path": url_path,
+            "webhook_secret": str(uuid.uuid4())
+        }}
     else:
         data["mode"] = {"type": "long_polling"}
 
@@ -139,7 +148,13 @@ def newbot(name, token):
 
     data["docker"] = add_docker
 
-    print(ProjectSchema(**data))
+    p_schema = ProjectSchema(**data)
+    creator_project = CreatorProject(p_schema)
+    creator_project.create()
+    # env_render = ENV_TEMPLATE.render(**p_schema.model_dump())
+    # print(env_render)
+    # settings_render = SETTINGS_TEMPLATE.render(**p_schema.model_dump())
+    # print(settings_render)
 
 
 

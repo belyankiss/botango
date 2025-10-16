@@ -1,0 +1,70 @@
+from jinja2 import Template
+
+from botango.schemas.template_class import ManagerTemplate
+from .enviroment_jinja import ENV
+
+MAIN_TEMPLATE = ENV.from_string(
+"""{% if mode.type == 'webhook' %}
+import asyncio
+
+from aiogram import Bot, Router
+from aiogram.client.default import DefaultBotProperties
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+
+from settings import settings
+from botango.bot.core_bot import WebhookBot
+
+bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
+router = Router()
+
+app = WebhookBot(
+    bot=bot,
+    base_url=settings.WEBHOOK_URL,
+    webhook_secret=settings.WEBHOOK_SECRET,
+    allowed_updates=["message", "callback_query"]
+)
+
+@router.message(CommandStart())
+async def example_func(message: Message):
+    await message.answer(text="Hello from botango!")
+
+# if you need to include routers
+app.include_routers(router)
+
+if __name__ == '__main__':
+    asyncio.run(app.run())
+{% endif %}
+{% if mode.type == 'long_polling' %}
+import asyncio
+
+from aiogram import Bot, Router
+from aiogram.client.default import DefaultBotProperties
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+
+from settings import settings
+from botango.bot.core_bot import LongPollingBot
+
+bot = Bot(token=settings.BOT_TOKEN, default=DefaultBotProperties(parse_mode='HTML'))
+router = Router()
+
+app = LongPollingBot(
+    bot=bot
+)
+
+@router.message(CommandStart())
+async def example_func(message: Message):
+    await message.answer(text="Hello from botango!")
+
+# if you need to include routers
+app.include_routers(router)
+
+if __name__ == '__main__':
+    asyncio.run(app.run())
+{% endif %}
+""")
+
+class MainTemplate(ManagerTemplate):
+    filename: str = "main.py"
+    template: Template = MAIN_TEMPLATE

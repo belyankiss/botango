@@ -9,9 +9,6 @@ class AbstractDatabase(abc.ABC):
     _data: Dict[str, str] = None
     _registry: ClassVar[Dict[str, Type["AbstractDatabase"]]] = {}
 
-    @abc.abstractmethod
-    def data(self) -> Dict[str, str]: ...
-
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         if not hasattr(cls, "name"):

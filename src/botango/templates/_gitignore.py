@@ -1,4 +1,10 @@
-GITIGNORE=""".gitignore
+from jinja2 import Template
+
+from botango.schemas.template_class import ManagerTemplate
+from .enviroment_jinja import ENV
+
+GITIGNORE = ENV.from_string(
+""".gitignore
 __pycache__/
 *.pyc
 .env
@@ -13,4 +19,8 @@ dist/
 *.iml
 *.xml
 .idea
-"""
+""")
+
+class GitIgnoreTemplate(ManagerTemplate):
+    filename: str = ".gitignore"
+    template: Template = GITIGNORE
