@@ -13,11 +13,11 @@ DEFAULT_FILES = {
 }
 
 DATABASE_FILES = {
-    "database/__init__.py": "init_database.j2",
-    "database/connection.py": "connection.j2",
-    "database/models/__init__.py": "init_models.j2",
-    "database/models/base.py": "base.j2",
-    "database/models/user.py": "model_user.j2"
+    "database/__init__.py": "database/init.j2",
+    "database/connection.py": "database/connection.j2",
+    "database/models/__init__.py": "database/models/init.j2",
+    "database/models/base.py": "database/models/base.j2",
+    "database/models/user.py": "database/models/user.j2"
 }
 
 
