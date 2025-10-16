@@ -89,7 +89,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 # === Служебные функции ===
 async def create_tables() -> None:
     """Создать таблицы из Base.metadata (только для DEV/testing)."""
-    from models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
+    from .models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
 
     async with engine.begin() as conn:
         # run_sync выполнит синхронную metadata.create_all в контексте асинхронного соединения
@@ -98,7 +98,7 @@ async def create_tables() -> None:
 
 async def drop_tables() -> None:
     """Удалить таблицы (DEV only)."""
-    from models import Base
+    from .models import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -214,7 +214,7 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 # === Служебные функции ===
 async def create_tables() -> None:
     """Создать таблицы из Base.metadata (только для DEV/testing)."""
-    from models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
+    from .models import Base  # ожидаем, что Base = declarative_base(metadata=metadata)
 
     async with engine.begin() as conn:
         # run_sync выполнит синхронную metadata.create_all в контексте асинхронного соединения
@@ -223,7 +223,7 @@ async def create_tables() -> None:
 
 async def drop_tables() -> None:
     """Удалить таблицы (DEV only)."""
-    from models import Base
+    from .models import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
