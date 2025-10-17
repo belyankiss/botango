@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     DEBUG: bool
     {% endif %}
 
+    {% if database %}
     @property
     def url_database(self) -> str:
         {% if database.name == 'postgresql' %}
@@ -34,6 +35,7 @@ class Settings(BaseSettings):
         {% if database.name == 'aiosqlite' %}
         return f"sqlite+aiosqlite:///./{self.NAME_DATABASE}"
         {% endif %}
+    {% endif %}
 
     @property
     def debug(self) -> bool:

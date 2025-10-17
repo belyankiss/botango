@@ -1,9 +1,8 @@
-import sys
 from pathlib import Path
 
+from botango.schemas import Project
 from botango.utils.package_loader import PackageLoader
 from botango.utils.render_templates import RenderTemplate
-from botango.schemas.project_schema import ProjectSchema
 
 DEFAULT_FILES = {
     "main.py": "main.j2",
@@ -37,11 +36,12 @@ DEFAULT_DIRS_DATABASE = [
 class CreatorProject:
     def __init__(
             self,
-            project_schema: ProjectSchema
+            project_schema: Project
     ):
         self.project_schema = project_schema
         self.project_path = Path(project_schema.name)
         self.project_path.mkdir(parents=True, exist_ok=True)
+        DEFAULT_FILES[f"{self.project_schema.name}/__init__.py"] = "empty_init.j2"
         for value in DEFAULT_DIRS_BOT:
             (self.project_path / value).mkdir(parents=True, exist_ok=True)
         self.render_template = RenderTemplate()
@@ -52,11 +52,11 @@ class CreatorProject:
 
     def _create_database_files(self):
         for k, v in DATABASE_FILES.items():
-            self.render_template.make_file(k, v, **self.project_schema.database.to_dict())
+            self.render_template.make_file(k, v, **self.project_schema.database.model_dump())
 
     def _install_db_dependencies(self):
         if self.project_schema.database:
-            PackageLoader(self.project_schema.database.__dependencies__, self.project_schema.database.__version__)
+            PackageLoader(self.project_schema.database.data.dependency, self.project_schema.database.data.version)
             self._install_sqlalchemy()
 
     @staticmethod

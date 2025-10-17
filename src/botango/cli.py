@@ -1,18 +1,21 @@
 from __future__ import annotations
 
-import asyncio
-import uuid
 from typing import List, Dict, Any, Optional
 
 import click
 from aiogram import Bot
-from aiogram.exceptions import TelegramUnauthorizedError
 from aiogram.utils.token import TokenValidationError
 
-from botango.databases.absrtact_db import AbstractDatabase
-from botango.databases.aiosqlite_db import AioSQLiteDatabase
-from botango.databases.postgres_db import PostgresDatabase
-from botango.schemas.project_schema import ProjectSchema
+from botango.schemas import Project
+from botango.schemas import (
+    AioSQLiteData,
+    BaseDatabase,
+    DatabaseData,
+    ModeSchema,
+    PostgresData,
+    WebHookData
+)
+from botango.utils.cli_funcs import check_token
 from botango.utils.creator_project import CreatorProject
 
 
@@ -69,47 +72,67 @@ def num_list(
         click.echo(f"{settings_message}: {choice}")
         return choice
 
-def choice_setting_bot(data: Dict[str, Any]):
-    mode_bot = ["webhook", "long_polling"]
+def choice_setting_bot(project_schema: Project):
     mode = num_list(
-        list_var=mode_bot,
+        list_var=project_schema.mode.allowed_methods(),
         echo_message="Выберите режим работы бота:",
         settings_message="Режим работы бота",
         default_value=2
     )
+    mode_schema = ModeSchema(type=mode)
+    project_schema.mode = mode_schema
     if mode == "webhook":
         host = click.prompt("Введите хост для webhook", default=None, value_proc=validate_https_host)
+        webhook_data = WebHookData(host=host)
         port = click.prompt("Введите порт для webhook", default=8000, type=int)
+        webhook_data.port = port
         url_path = click.prompt("Введите путь для webhook", default="/webhook")
-        data["mode"] = {"type": "webhook", "data": {
-            "host": host,
-            "port": port,
-            "url_path": url_path,
-            "webhook_secret": str(uuid.uuid4())
-        }}
-    else:
-        data["mode"] = {"type": "long_polling"}
+        webhook_data.url_path = url_path
+        mode_schema.data = webhook_data
 
-def choice_database(data: Dict[str, Any]):
-    cls_database = None
+def choice_database(project_schema: Project):
+    database_data = None
     db_choice = num_list(
-        list_var=AbstractDatabase.list_databases(),
+        list_var=BaseDatabase.__name_databases__,
         echo_message="Выберите базу данных:",
         settings_message="База данных",
         default_value=None
     )
+    data = None
     if db_choice == "postgresql":
         host = click.prompt("Введите url для PostgreSQL:", default="localhost")
         port = click.prompt("Введите порт для PostgreSQL:", default=5432, type=int)
         user = click.prompt("Введите имя пользователя PostgreSQL:", default="postgres")
         password = click.prompt("Введите пароль пользователя PostgreSQL:", default="postgres")
-        name_db = click.prompt("Введите название базы данных PostgreSQL:", default="botango_database")
-        cls_database = PostgresDatabase(host, port, user, password, name_db)
+        name_database = click.prompt("Введите название базы данных PostgreSQL:", default="botango")
+        data = PostgresData(
+            name_database=name_database,
+            host=host,
+            port=port,
+            user=user,
+            password=password
+        )
     elif db_choice == "aiosqlite":
-        name_db = click.prompt("Введите название базы данных AioSQLite:", default="botango_database")
-        cls_database = AioSQLiteDatabase(name_db)
+        name_database = click.prompt("Введите название базы данных AioSQLite:", default="botango.db")
+        data = AioSQLiteData(name_database=name_database)
+    if data:
+        database_data = DatabaseData(
+            name=db_choice,
+            data=data
+        )
+    project_schema.database = database_data
 
-    data["database"] = cls_database
+def add_docker(data: Dict[str, Any]):
+    docker_mode = ["github_secret", "environment"]
+    choice = click.confirm("Сделать файлы Docker и docker-compose.yaml?", default=False)
+
+    if choice:
+        docker_choice = num_list(
+            docker_mode,
+            echo_message="Где вы будете хранить чувствительные данные?",
+            settings_message="Место хранения",
+            default_value=2
+        )
 
 
 @click.group()
@@ -120,36 +143,19 @@ def cli():
 @click.argument("name")
 @click.option("--token", prompt="Введите токен бота, который получили в @BotFather", hide_input=True, callback=validate_token)
 def newbot(name, token):
-    async def check_token():
-        bot = Bot(token)
-        async with bot:
-            try:
-                me = await bot.get_me()
-                click.echo(f"✅ Токен действителен. Это бот @{me.username}")
-            except TelegramUnauthorizedError:
-                raise click.ClickException("❌ Токен недействителен. Telegram вернул ошибку авторизации.")
-            finally:
-                await bot.session.close()
-    asyncio.run(check_token())
+    check_token(token)
+    project_schema = Project(
+        name=name,
+        token=token
+    )
+    choice_setting_bot(project_schema)
 
-    data = {
-        "name": name,
-        "token": token,
-    }
-    choice_setting_bot(data)
-
-    choice_database(data)
+    choice_database(project_schema)
 
     add_redis = click.confirm("Добавить Redis?", default=False)
 
-    data["redis"] = add_redis
-
-    add_docker = click.confirm("Сделать файлы Docker и docker-compose.yaml?", default=False)
-
-    data["docker"] = add_docker
-
-    p_schema = ProjectSchema(**data)
-    creator_project = CreatorProject(p_schema)
+    project_schema.redis = add_redis
+    creator_project = CreatorProject(project_schema)
     creator_project.create()
 
 
