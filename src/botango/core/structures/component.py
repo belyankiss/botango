@@ -4,6 +4,7 @@ from pydantic import BaseModel, Field
 
 from .dependency import Dependency
 from .structure import Structure
+from .template import Template
 
 
 class Component(BaseModel):
@@ -21,3 +22,16 @@ class Component(BaseModel):
     def get_requirement_strings(self) -> List[str]:
         return [dep.pack() for dep in self.dependencies]
 
+
+AioSQLiteComponent = Component(
+    name="aiosqlite",
+    description="Подключение базы данных",
+    structure=Structure(
+        templates=[
+            Template(
+                target_file="database/__init__.py",
+                template_file="database/__init__.py.j2"
+            )
+        ]
+    )
+)
