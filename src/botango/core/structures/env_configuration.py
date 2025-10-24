@@ -30,6 +30,7 @@ class DefaultFieldEnv(StrEnum):
     webhook_secret = "very-secret-value"
     redis_host = "localhost"
     redis_port = "6379"
+    redis_database = "0"
     cryptobot_token = "Your cryptobot token here!"
 
 class BaseEnv(BaseModel):
@@ -61,6 +62,7 @@ class RedisEnv(BaseEnv):
     name: NamesEnv = NamesEnv.redis
     REDIS_HOST: DefaultFieldEnv = DefaultFieldEnv.redis_host
     REDIS_PORT: DefaultFieldEnv = DefaultFieldEnv.redis_port
+    REDIS_DATABASE: DefaultFieldEnv = DefaultFieldEnv.redis_database
 
 class CryptoBotEnv(BaseEnv):
     name: NamesEnv = NamesEnv.cryptobot
@@ -130,9 +132,3 @@ class EnvCreator:
         data = cls.load()
         [data.pop(v, None) for v in model.model_dump().keys()]
         cls._rewrite_env_file(data)
-
-if __name__ == '__main__':
-    b = EnvCreator()
-    b.add(AiosqliteEnv())
-    b.add(PostgresEnv())
-    b.add(CryptoBotEnv())

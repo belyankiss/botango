@@ -42,7 +42,6 @@ class Template(BaseModel):
         *,
         base_directory: str,
         target_file: str,
-        data: Dict[str, Any] = None,
         **_pydantic_kwargs: Any
     ):
         """
@@ -53,7 +52,6 @@ class Template(BaseModel):
             base_directory=p,
             target_file=p / target_file,
             template_file=p / f"{target_file}.j2",
-            data=data or {},
             **_pydantic_kwargs
         )
 
@@ -91,9 +89,11 @@ class Template(BaseModel):
             if os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-    def create(self):
+    def create(self, data: Dict[str, Any] = None):
         """
         Основной метод: отрисовывает шаблон и создаёт файл.
         """
+        data = data if data else {}
+        self.data = self.data | data
         rows = self._render()
         self._write_atomic(rows)

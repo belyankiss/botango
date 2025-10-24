@@ -1,1 +1,11 @@
 # {{ name_project }}/handlers/__init__.py
+
+{% if handlers and handlers.get("class") %}
+{% for item in handlers.get("class") -%}
+from .{{ item }} import {{ item }}_router
+{% endfor %}
+
+__all__ = [{% for item in handlers.get("class") -%}
+"{{ item }}_router"{% if not loop.last %}, {% endif %}
+{%- endfor %}]
+{% endif %}

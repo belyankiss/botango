@@ -1,0 +1,11 @@
+# settings/__init__.py
+
+import os
+
+ENV = os.getenv("ENV", "dev").lower()
+
+
+from .settings import * # noqa: F401,F403
+
+# expose the env name for runtime checks
+__all__ = [name for name in globals() if name.isupper()] + ["ENV"]

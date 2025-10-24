@@ -1,0 +1,76 @@
+# settings/settings.py
+
+import os
+from pathlib import Path
+from urllib.parse import quote_plus
+from dotenv import load_dotenv
+
+# Путь до текущей директории настроек
+BASE_DIR = Path(__file__).resolve().parent
+
+ENV_PATH = Path(os.getenv("ENV_PATH", BASE_DIR.parents[0] / "data" / ".env"))
+
+# Загружаем .env (если есть)
+load_dotenv(ENV_PATH)
+
+# --- helper для безопасного int-приведения ---
+def _int_env(name: str, default: int) -> int:
+    val = os.getenv(name)
+    if val is None or val == "":
+        return default
+    try:
+        return int(val)
+    except ValueError:
+        raise ValueError(f"Expected integer in env {name}, got: {val!r}")
+
+{% if BOT_TOKEN -%}
+# --- BOT ---
+"""Токен бота (обязателен для запуска бота)."""
+BOT_TOKEN: str = os.getenv("BOT_TOKEN", "")
+if not BOT_TOKEN:
+    raise RuntimeError("BOT_TOKEN is not set")
+{%- endif %}
+
+{% if DB_NAME -%}
+# --- SQLITE ---
+"""Данные для работы с базой данных aiosqlite"""
+DB_NAME: str = os.getenv("DB_NAME", "example_database.db")
+URL_DATABASE: str = f"sqlite+aiosqlite:///{(BASE_DIR.parents[1] / 'data' / DB_NAME).as_posix()}"
+{%- endif %}
+
+{% if POSTGRES_NAME -%}
+# --- POSTGRES ---
+"""Данные для работы с PostgreSQL"""
+POSTGRES_NAME: str = os.getenv("POSTGRES_NAME", "example_database")
+POSTGRES_USER: str = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "")
+POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT: int = _int_env("POSTGRES_PORT", 5432)
+
+# Экранируем пароль для безопасного вставления в URL
+_pg_pwd = quote_plus(POSTGRES_PASSWORD)
+URL_DATABASE: str = (
+    f"postgresql+asyncpg://{POSTGRES_USER}:{_pg_pwd}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_NAME}"
+)
+{%- endif %}
+
+{% if WEBHOOK_URL -%}
+# --- WEBHOOK ---
+"""Данные для webhook"""
+WEBHOOK_URL: str = os.getenv("WEBHOOK_URL", "https://your-domain.com")
+WEBHOOK_PATH: str = os.getenv("WEBHOOK_PATH", "/webhook")
+WEBHOOK_SECRET: str = os.getenv("WEBHOOK_SECRET", "very-secret-value")
+{%- endif %}
+
+{% if REDIS_HOST -%}
+# --- REDIS ---
+"""Redis"""
+REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
+REDIS_PORT = _int_env("REDIS_PORT", 6379)
+REDIS_DB = _int_env("REDIS_DB", 0)
+{%- endif %}
+
+# --- CRYPTOBOT ---
+{% if CRYPTOBOT_TOKEN -%}
+CRYPTOBOT_TOKEN: str = os.getenv("CRYPTOBOT_TOKEN", "Your cryptobot token here!")
+{%- endif %}
